@@ -1,5 +1,5 @@
 **nome provisorio**
-# As Aventuras de Estopinha
+# As Aventuras de Caramelito
 
 Uma solução gamificada de **reabilitação física** infantil, projetada para transformar exercícios motores repetitivos em um jogo divertido.
 
