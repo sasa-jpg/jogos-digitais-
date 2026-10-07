@@ -1,4 +1,5 @@
-# nome provisorio As Aventuras de (um heroi) Estopinha
+**nome provisorio**
+# As Aventuras de Estopinha
 
 ### 🎯 Público-Alvo
 Crianças em processo de reabilitação física.
