@@ -31,6 +31,9 @@ public class FirstScreen implements Screen {
     private boolean pegouOssinho1 = false;
     private boolean pegouOssinho2 = false;
     private boolean pegouOssinho3 = false;
+    private boolean pulando = false;
+    private float velocidadePulo = 0f;
+    private float alturaChao = 80f;
 
     @Override
     public void show() {
@@ -38,10 +41,10 @@ public class FirstScreen implements Screen {
         fonte = new BitmapFont();
         caramelo = new Caramelo();
         fundo = new Texture("fase1_cidade.png");
-        cone1 = new Obstaculo(500, 75);
-        cone2 = new Obstaculo(800, 75);
-        cone3 = new Obstaculo(1100, 75);
-        cone4 = new Obstaculo(1400, 75);
+        cone1 = new Obstaculo(800, 80);
+        cone2 = new Obstaculo(1300, 80);
+        cone3 = new Obstaculo(1900, 80);
+        cone4 = new Obstaculo(2500, 80);
         ossinho1 = new Coletavel(650, 120);
         ossinho2 = new Coletavel(950, 180);
         ossinho3 = new Coletavel(1250, 120);
@@ -55,24 +58,30 @@ public class FirstScreen implements Screen {
     }
 
     private void input() {
-        float velocidade = 100f;
+        float velocidade = 250f;
         float delta = Gdx.graphics.getDeltaTime();
 
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            caramelo.moverDireita(velocidade * delta);
             fundoOffsetX -= velocidade * delta * velocidadeParalaxe;
+
             cone1.getSprite().translateX(-velocidade * delta);
             cone2.getSprite().translateX(-velocidade * delta);
             cone3.getSprite().translateX(-velocidade * delta);
-            cone4.getSprite().translateX(-velocidade * delta); 
+            cone4.getSprite().translateX(-velocidade * delta);
+
             ossinho1.getSprite().translateX(-velocidade * delta);
             ossinho2.getSprite().translateX(-velocidade * delta);
-            ossinho3.getSprite().translateX(-velocidade * delta); 
-        } 
+            ossinho3.getSprite().translateX(-velocidade * delta);
+        }
 
         else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             caramelo.moverEsquerda(velocidade * delta);
             fundoOffsetX += velocidade * delta * velocidadeParalaxe;
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && !pulando) {
+            pulando = true;
+            velocidadePulo = 750f;
         }
     }
 
@@ -87,6 +96,20 @@ public class FirstScreen implements Screen {
             caramelo.getSprite().setX(
                 larguraTela - caramelo.getSprite().getWidth()
             );
+        }
+
+        float delta = Gdx.graphics.getDeltaTime();
+
+        if (pulando) {
+            caramelo.pular(velocidadePulo * delta);
+            
+            velocidadePulo -= 1200f * delta;
+
+            if (caramelo.getSprite().getY() <= alturaChao) {
+                caramelo.getSprite().setY(alturaChao);
+                velocidadePulo = 0;
+                pulando = false;
+            }
         }
 
         if (caramelo.getSprite().getBoundingRectangle()

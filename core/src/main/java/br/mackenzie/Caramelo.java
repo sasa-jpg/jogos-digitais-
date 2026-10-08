@@ -28,6 +28,10 @@ public class Caramelo {
         sprite.translateX(distancia);
     }
 
+    public void pular(float distancia) {
+        sprite.translateY(distancia);
+    }
+
     public void dispose() {
         textura.dispose();
     }
