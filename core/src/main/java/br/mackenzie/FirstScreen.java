@@ -19,12 +19,18 @@ public class FirstScreen implements Screen {
     private Obstaculo cone2;
     private Obstaculo cone3;
     private Obstaculo cone4;
+    private Coletavel ossinho1;
+    private Coletavel ossinho2;
+    private Coletavel ossinho3;
     private int pontuacao = 0;
     private BitmapFont fonte;
     private boolean bateuCone1 = false;
     private boolean bateuCone2 = false;
     private boolean bateuCone3 = false;
     private boolean bateuCone4 = false;
+    private boolean pegouOssinho1 = false;
+    private boolean pegouOssinho2 = false;
+    private boolean pegouOssinho3 = false;
 
     @Override
     public void show() {
@@ -36,6 +42,9 @@ public class FirstScreen implements Screen {
         cone2 = new Obstaculo(800, 75);
         cone3 = new Obstaculo(1100, 75);
         cone4 = new Obstaculo(1400, 75);
+        ossinho1 = new Coletavel(650, 120);
+        ossinho2 = new Coletavel(950, 180);
+        ossinho3 = new Coletavel(1250, 120);
     }
 
     @Override
@@ -55,7 +64,10 @@ public class FirstScreen implements Screen {
             cone1.getSprite().translateX(-velocidade * delta);
             cone2.getSprite().translateX(-velocidade * delta);
             cone3.getSprite().translateX(-velocidade * delta);
-            cone4.getSprite().translateX(-velocidade * delta);  
+            cone4.getSprite().translateX(-velocidade * delta); 
+            ossinho1.getSprite().translateX(-velocidade * delta);
+            ossinho2.getSprite().translateX(-velocidade * delta);
+            ossinho3.getSprite().translateX(-velocidade * delta); 
         } 
 
         else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
@@ -100,6 +112,24 @@ public class FirstScreen implements Screen {
             pontuacao -= 5;
             bateuCone4 = true;
         }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(ossinho1.getSprite().getBoundingRectangle()) && !pegouOssinho1) {
+            pontuacao += 10;
+            pegouOssinho1 = true;
+        }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(ossinho2.getSprite().getBoundingRectangle()) && !pegouOssinho2) {
+            pontuacao += 10;
+            pegouOssinho2 = true;
+        }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(ossinho3.getSprite().getBoundingRectangle()) && !pegouOssinho3) {
+            pontuacao += 10;
+            pegouOssinho3 = true;
+        }
     }
 
     private void draw() {
@@ -129,6 +159,19 @@ public class FirstScreen implements Screen {
         cone2.getSprite().draw(batch);
         cone3.getSprite().draw(batch);
         cone4.getSprite().draw(batch);
+
+        //osso
+        if (!pegouOssinho1) {
+            ossinho1.getSprite().draw(batch);
+        }
+
+        if (!pegouOssinho2) {
+            ossinho2.getSprite().draw(batch);
+        }
+
+        if (!pegouOssinho3) {
+            ossinho3.getSprite().draw(batch);
+        }
 
         fonte.draw(batch, "Pontuação: " + pontuacao, 20, Gdx.graphics.getHeight() - 20);
 
