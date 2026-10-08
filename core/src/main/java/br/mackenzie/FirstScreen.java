@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class FirstScreen implements Screen {
@@ -16,14 +17,25 @@ public class FirstScreen implements Screen {
     private float velocidadeParalaxe = 0.4f;
     private Obstaculo cone1;
     private Obstaculo cone2;
+    private Obstaculo cone3;
+    private Obstaculo cone4;
+    private int pontuacao = 0;
+    private BitmapFont fonte;
+    private boolean bateuCone1 = false;
+    private boolean bateuCone2 = false;
+    private boolean bateuCone3 = false;
+    private boolean bateuCone4 = false;
 
     @Override
     public void show() {
         batch = new SpriteBatch();
+        fonte = new BitmapFont();
         caramelo = new Caramelo();
         fundo = new Texture("fase1_cidade.png");
-        //cone1 = new Obstaculo(500, 100);
-        //cone2 = new Obstaculo(800, 100);
+        cone1 = new Obstaculo(500, 75);
+        cone2 = new Obstaculo(800, 75);
+        cone3 = new Obstaculo(1100, 75);
+        cone4 = new Obstaculo(1400, 75);
     }
 
     @Override
@@ -40,7 +52,12 @@ public class FirstScreen implements Screen {
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             caramelo.moverDireita(velocidade * delta);
             fundoOffsetX -= velocidade * delta * velocidadeParalaxe;
+            cone1.getSprite().translateX(-velocidade * delta);
+            cone2.getSprite().translateX(-velocidade * delta);
+            cone3.getSprite().translateX(-velocidade * delta);
+            cone4.getSprite().translateX(-velocidade * delta);  
         } 
+
         else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             caramelo.moverEsquerda(velocidade * delta);
             fundoOffsetX += velocidade * delta * velocidadeParalaxe;
@@ -58,6 +75,30 @@ public class FirstScreen implements Screen {
             caramelo.getSprite().setX(
                 larguraTela - caramelo.getSprite().getWidth()
             );
+        }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone1.getSprite().getBoundingRectangle()) && !bateuCone1) {
+            pontuacao -= 5;
+            bateuCone1 = true;
+        }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone2.getSprite().getBoundingRectangle()) && !bateuCone2) {
+            pontuacao -= 5;
+            bateuCone2 = true;
+        }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone3.getSprite().getBoundingRectangle()) && !bateuCone3) {
+            pontuacao -= 5;
+            bateuCone3 = true;
+        }
+
+        if (caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone4.getSprite().getBoundingRectangle()) && !bateuCone4) {
+            pontuacao -= 5;
+            bateuCone4 = true;
         }
     }
 
@@ -84,8 +125,12 @@ public class FirstScreen implements Screen {
         caramelo.getSprite().draw(batch);
 
         // Obstáculos
-        //cone1.getSprite().draw(batch);
-        //cone2.getSprite().draw(batch);
+        cone1.getSprite().draw(batch);
+        cone2.getSprite().draw(batch);
+        cone3.getSprite().draw(batch);
+        cone4.getSprite().draw(batch);
+
+        fonte.draw(batch, "Pontuação: " + pontuacao, 20, Gdx.graphics.getHeight() - 20);
 
         batch.end();
     }
