@@ -31,6 +31,7 @@ public class FirstScreen implements Screen {
     private boolean bateuCone2 = false;
     private boolean bateuCone3 = false;
     private boolean bateuCone4 = false;
+    private boolean movimentoBloqueado = false;
     private boolean pegouOssinho1 = false;
     private boolean pegouOssinho2 = false;
     private boolean pegouOssinho3 = false;
@@ -74,9 +75,11 @@ public class FirstScreen implements Screen {
         float velocidade = 250f;
         float delta = Gdx.graphics.getDeltaTime();
 
-        andando = Gdx.input.isKeyPressed(Input.Keys.RIGHT) && !pulando;
+        andando = Gdx.input.isKeyPressed(Input.Keys.RIGHT)
+        && !pulando && !movimentoBloqueado;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)
+        && !movimentoBloqueado) {
             fundoOffsetX -= velocidade * delta * velocidadeParalaxe;
 
             cone1.getSprite().translateX(-velocidade * delta);
@@ -98,6 +101,7 @@ public class FirstScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && !pulando) {
             pulando = true;
             andando = false;
+            movimentoBloqueado = false;
             velocidadePulo = 750f;
             caramelo.setImagemPulando(true);
         }
@@ -150,26 +154,44 @@ public class FirstScreen implements Screen {
             }
         }
 
-        if (caramelo.getSprite().getBoundingRectangle()
-                .overlaps(cone1.getSprite().getBoundingRectangle()) && !bateuCone1) {
+        
+        boolean colidiuCone1 = caramelo.getSprite().getBoundingRectangle()
+        .overlaps(cone1.getSprite().getBoundingRectangle());
+
+        boolean colidiuCone2 = caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone2.getSprite().getBoundingRectangle());
+
+        boolean colidiuCone3 = caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone3.getSprite().getBoundingRectangle());
+
+        boolean colidiuCone4 = caramelo.getSprite().getBoundingRectangle()
+                .overlaps(cone4.getSprite().getBoundingRectangle());
+
+        // Bloqueia o avanço se bater em um cone no chão.
+        movimentoBloqueado = !pulando
+                && (colidiuCone1 || colidiuCone2
+                || colidiuCone3 || colidiuCone4);
+
+        // Cone 1
+        if (!pulando && colidiuCone1 && !bateuCone1) {
             pontuacao -= 5;
             bateuCone1 = true;
         }
 
-        if (caramelo.getSprite().getBoundingRectangle()
-                .overlaps(cone2.getSprite().getBoundingRectangle()) && !bateuCone2) {
+        // Cone 2
+        if (!pulando && colidiuCone2 && !bateuCone2) {
             pontuacao -= 5;
             bateuCone2 = true;
         }
 
-        if (caramelo.getSprite().getBoundingRectangle()
-                .overlaps(cone3.getSprite().getBoundingRectangle()) && !bateuCone3) {
+        // Cone 3
+        if (!pulando && colidiuCone3 && !bateuCone3) {
             pontuacao -= 5;
             bateuCone3 = true;
         }
 
-        if (caramelo.getSprite().getBoundingRectangle()
-                .overlaps(cone4.getSprite().getBoundingRectangle()) && !bateuCone4) {
+        // Cone 4
+        if (!pulando && colidiuCone4 && !bateuCone4) {
             pontuacao -= 5;
             bateuCone4 = true;
         }
@@ -230,14 +252,14 @@ public class FirstScreen implements Screen {
         batch.draw(fundo, x, 0, larguraTela, alturaTela);
         batch.draw(fundo, x + larguraTela, 0, larguraTela, alturaTela);
 
-        // Caramelo
-        caramelo.getSprite().draw(batch);
-
         // Obstáculos
         cone1.getSprite().draw(batch);
         cone2.getSprite().draw(batch);
         cone3.getSprite().draw(batch);
         cone4.getSprite().draw(batch);
+
+        // Caramelo na frente dos cones
+        caramelo.getSprite().draw(batch);
 
         //osso
         if (!pegouOssinho1) {
