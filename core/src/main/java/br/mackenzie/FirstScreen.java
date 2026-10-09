@@ -38,8 +38,11 @@ public class FirstScreen implements Screen {
     private boolean pegouOssinho5 = false;
     private boolean pegouOssinho6 = false;
     private boolean pulando = false;
+    private float tempoAnimacao = 0f;
+    private boolean segundaImagem = false;
+    private boolean andando = false;
     private float velocidadePulo = 0f;
-    private float alturaChao = 80f;
+    private float alturaChao = 70f;
 
     @Override
     public void show() {
@@ -66,9 +69,12 @@ public class FirstScreen implements Screen {
         draw();
     }
 
+    
     private void input() {
         float velocidade = 250f;
         float delta = Gdx.graphics.getDeltaTime();
+
+        andando = Gdx.input.isKeyPressed(Input.Keys.RIGHT) && !pulando;
 
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             fundoOffsetX -= velocidade * delta * velocidadeParalaxe;
@@ -84,16 +90,35 @@ public class FirstScreen implements Screen {
             ossinho4.getSprite().translateX(-velocidade * delta);
             ossinho5.getSprite().translateX(-velocidade * delta);
             ossinho6.getSprite().translateX(-velocidade * delta);
-        }
-
-        else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             caramelo.moverEsquerda(velocidade * delta);
             fundoOffsetX += velocidade * delta * velocidadeParalaxe;
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && !pulando) {
             pulando = true;
+            andando = false;
             velocidadePulo = 750f;
+            caramelo.setImagemPulando(true);
+        }
+
+        if (andando) {
+            tempoAnimacao += delta;
+
+            if (tempoAnimacao >= 0.15f) {
+                segundaImagem = !segundaImagem;
+                tempoAnimacao = 0f;
+                caramelo.alternarImagemAndando(segundaImagem);
+            }
+        } else {
+            tempoAnimacao = 0f;
+
+            if (pulando) {
+                // Mantém a imagem de pulo durante o salto.
+            } else {
+                segundaImagem = false;
+                caramelo.alternarImagemAndando(false);
+            }
         }
     }
 
@@ -121,6 +146,7 @@ public class FirstScreen implements Screen {
                 caramelo.getSprite().setY(alturaChao);
                 velocidadePulo = 0;
                 pulando = false;
+                caramelo.setImagemPulando(false);
             }
         }
 
