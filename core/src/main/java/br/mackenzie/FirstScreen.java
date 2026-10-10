@@ -3,10 +3,13 @@ package br.mackenzie;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 
 public class FirstScreen implements Screen {
 
@@ -44,11 +47,14 @@ public class FirstScreen implements Screen {
     private boolean andando = false;
     private float velocidadePulo = 0f;
     private float alturaChao = 70f;
+    private float tempoPausa = 0f;
+    private ShapeRenderer shapeRenderer;
 
     @Override
     public void show() {
         batch = new SpriteBatch();
         fonte = new BitmapFont();
+        shapeRenderer = new ShapeRenderer();
         caramelo = new Caramelo();
         fundo = new Texture("fase1_cidade.png");
         cone1 = new Obstaculo(800, 80);
@@ -75,11 +81,9 @@ public class FirstScreen implements Screen {
         float velocidade = 250f;
         float delta = Gdx.graphics.getDeltaTime();
 
-        andando = Gdx.input.isKeyPressed(Input.Keys.RIGHT)
-        && !pulando && !movimentoBloqueado;
+        andando = Gdx.input.isKeyPressed(Input.Keys.RIGHT) && !pulando;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)
-        && !movimentoBloqueado) {
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && !movimentoBloqueado) {
             fundoOffsetX -= velocidade * delta * velocidadeParalaxe;
 
             cone1.getSprite().translateX(-velocidade * delta);
@@ -93,10 +97,8 @@ public class FirstScreen implements Screen {
             ossinho4.getSprite().translateX(-velocidade * delta);
             ossinho5.getSprite().translateX(-velocidade * delta);
             ossinho6.getSprite().translateX(-velocidade * delta);
-        } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            caramelo.moverEsquerda(velocidade * delta);
-            fundoOffsetX += velocidade * delta * velocidadeParalaxe;
-        }
+        } 
+        
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && !pulando) {
             pulando = true;
@@ -118,7 +120,7 @@ public class FirstScreen implements Screen {
             tempoAnimacao = 0f;
 
             if (pulando) {
-                // Mantém a imagem de pulo durante o salto.
+                
             } else {
                 segundaImagem = false;
                 caramelo.alternarImagemAndando(false);
@@ -141,20 +143,88 @@ public class FirstScreen implements Screen {
 
         float delta = Gdx.graphics.getDeltaTime();
 
+        if (tempoPausa > 0f) {
+            tempoPausa -= delta;
+        }
+
+       
         if (pulando) {
+            float yAnterior = caramelo.getSprite().getY();
+
             caramelo.pular(velocidadePulo * delta);
-            
             velocidadePulo -= 1200f * delta;
 
-            if (caramelo.getSprite().getY() <= alturaChao) {
+            float yAtual = caramelo.getSprite().getY();
+
+            
+            if (yAtual <= alturaChao) {
                 caramelo.getSprite().setY(alturaChao);
                 velocidadePulo = 0;
                 pulando = false;
                 caramelo.setImagemPulando(false);
             }
+
+           
+            if (pulando && velocidadePulo < 0) {
+                Rectangle cachorro = caramelo.getSprite().getBoundingRectangle();
+
+                Obstaculo[] cones = {cone1, cone2, cone3, cone4};
+
+                for (Obstaculo cone : cones) {
+                    Rectangle obstaculo = cone.getSprite().getBoundingRectangle();
+
+                    boolean sobreCone =
+                        cachorro.x + cachorro.width > obstaculo.x &&
+                        cachorro.x < obstaculo.x + obstaculo.width;
+
+                    float topoCone = obstaculo.y + obstaculo.height;
+                    boolean cruzouTopo =
+                        yAnterior >= topoCone &&
+                        yAtual <= topoCone;
+
+                    if (sobreCone && cruzouTopo) {
+                        caramelo.getSprite().setY(topoCone);
+                        velocidadePulo = 0;
+                        pulando = false;
+                        caramelo.setImagemPulando(false);
+                        break;
+                    }
+                }
+            }
         }
 
         
+        if (!pulando && caramelo.getSprite().getY() > alturaChao) {
+            boolean apoiadoEmCone = false;
+
+            Rectangle cachorro = caramelo.getSprite().getBoundingRectangle();
+
+            Obstaculo[] cones = {cone1, cone2, cone3, cone4};
+
+            for (Obstaculo cone : cones) {
+                Rectangle obstaculo = cone.getSprite().getBoundingRectangle();
+
+                boolean sobreCone =
+                    cachorro.x + cachorro.width > obstaculo.x &&
+                    cachorro.x < obstaculo.x + obstaculo.width;
+
+                boolean naAlturaDoCone =
+                    Math.abs(caramelo.getSprite().getY()
+                        - (obstaculo.y + obstaculo.height)) < 2f;
+
+                if (sobreCone && naAlturaDoCone) {
+                    apoiadoEmCone = true;
+                    break;
+                }
+            }
+
+            if (!apoiadoEmCone) {
+                caramelo.getSprite().setY(
+                    Math.max(alturaChao, caramelo.getSprite().getY() - 500f * delta)
+                );
+            }
+        }
+                
         boolean colidiuCone1 = caramelo.getSprite().getBoundingRectangle()
         .overlaps(cone1.getSprite().getBoundingRectangle());
 
@@ -167,35 +237,34 @@ public class FirstScreen implements Screen {
         boolean colidiuCone4 = caramelo.getSprite().getBoundingRectangle()
                 .overlaps(cone4.getSprite().getBoundingRectangle());
 
-        // Bloqueia o avanço se bater em um cone no chão.
+        
         movimentoBloqueado = !pulando
                 && (colidiuCone1 || colidiuCone2
                 || colidiuCone3 || colidiuCone4);
 
         // Cone 1
-        if (!pulando && colidiuCone1 && !bateuCone1) {
+        if (colidiuCone1 && !bateuCone1) {
             pontuacao -= 5;
             bateuCone1 = true;
         }
 
         // Cone 2
-        if (!pulando && colidiuCone2 && !bateuCone2) {
+        if (colidiuCone2 && !bateuCone2) {
             pontuacao -= 5;
             bateuCone2 = true;
         }
 
         // Cone 3
-        if (!pulando && colidiuCone3 && !bateuCone3) {
+        if (colidiuCone3 && !bateuCone3) {
             pontuacao -= 5;
             bateuCone3 = true;
         }
 
         // Cone 4
-        if (!pulando && colidiuCone4 && !bateuCone4) {
+        if (colidiuCone4 && !bateuCone4) {
             pontuacao -= 5;
             bateuCone4 = true;
         }
-
         if (caramelo.getSprite().getBoundingRectangle()
                 .overlaps(ossinho1.getSprite().getBoundingRectangle()) && !pegouOssinho1) {
             pontuacao += 10;
@@ -233,63 +302,107 @@ public class FirstScreen implements Screen {
         }
     }
 
-    private void draw() {
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    
+private void draw() {
+    Gdx.gl.glClearColor(0, 0, 0, 1);
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        batch.begin();
+    float larguraTela = Gdx.graphics.getWidth();
+    float alturaTela = Gdx.graphics.getHeight();
 
-        // Fundo 
-        float larguraTela = Gdx.graphics.getWidth();
-        float alturaTela = Gdx.graphics.getHeight();
+    batch.begin();
 
-        float x = fundoOffsetX % larguraTela;
+    // Fundo
+    float x = fundoOffsetX % larguraTela;
 
-        if (x > 0) {
-            x -= larguraTela;
-        }
-
-        batch.draw(fundo, x, 0, larguraTela, alturaTela);
-        batch.draw(fundo, x + larguraTela, 0, larguraTela, alturaTela);
-
-        // Obstáculos
-        cone1.getSprite().draw(batch);
-        cone2.getSprite().draw(batch);
-        cone3.getSprite().draw(batch);
-        cone4.getSprite().draw(batch);
-
-        // Caramelo na frente dos cones
-        caramelo.getSprite().draw(batch);
-
-        //osso
-        if (!pegouOssinho1) {
-            ossinho1.getSprite().draw(batch);
-        }
-
-        if (!pegouOssinho2) {
-            ossinho2.getSprite().draw(batch);
-        }
-
-        if (!pegouOssinho3) {
-            ossinho3.getSprite().draw(batch);
-        }
-
-        if (!pegouOssinho4) {
-            ossinho4.getSprite().draw(batch);
-        }
-
-        if (!pegouOssinho5) {
-            ossinho5.getSprite().draw(batch);
-        }
-
-        if (!pegouOssinho6) {
-            ossinho6.getSprite().draw(batch);
-        }
-
-        fonte.draw(batch, "Pontuação: " + pontuacao, 20, Gdx.graphics.getHeight() - 20);
-
-        batch.end();
+    if (x > 0) {
+        x -= larguraTela;
     }
+
+    batch.draw(fundo, x, 0, larguraTela, alturaTela);
+    batch.draw(fundo, x + larguraTela, 0, larguraTela, alturaTela);
+
+    // Caramelo
+    caramelo.getSprite().draw(batch);
+
+    // Cones
+    cone1.getSprite().draw(batch);
+    cone2.getSprite().draw(batch);
+    cone3.getSprite().draw(batch);
+    cone4.getSprite().draw(batch);
+
+    // Ossinhos
+    if (!pegouOssinho1) ossinho1.getSprite().draw(batch);
+    if (!pegouOssinho2) ossinho2.getSprite().draw(batch);
+    if (!pegouOssinho3) ossinho3.getSprite().draw(batch);
+    if (!pegouOssinho4) ossinho4.getSprite().draw(batch);
+    if (!pegouOssinho5) ossinho5.getSprite().draw(batch);
+    if (!pegouOssinho6) ossinho6.getSprite().draw(batch);
+
+    
+    batch.end();
+
+    // painel de pontuação
+    Gdx.gl.glEnable(GL20.GL_BLEND);
+    Gdx.gl.glBlendFunc(
+        GL20.GL_SRC_ALPHA,
+        GL20.GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    if (shapeRenderer == null) {
+        shapeRenderer = new ShapeRenderer();
+    }
+
+shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+    shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+    shapeRenderer.setColor(0.07f, 0.10f, 0.15f, 0.90f);
+    shapeRenderer.rect(
+        20,
+        alturaTela - 95,
+        240,
+        75
+    );
+
+    
+    shapeRenderer.setColor(Color.GOLD);
+    shapeRenderer.rect(
+        20,
+        alturaTela - 95,
+        6,
+        75
+    );
+
+    shapeRenderer.end();
+    Gdx.gl.glDisable(GL20.GL_BLEND);
+
+    
+    batch.begin();
+
+    fonte.setColor(Color.WHITE);
+    fonte.getData().setScale(1.0f);
+    fonte.draw(
+        batch,
+        "PONTUACAO",
+        40,
+        alturaTela - 30
+    );
+
+    fonte.setColor(Color.GOLD);
+    fonte.getData().setScale(1.5f);
+    fonte.draw(
+        batch,
+        pontuacao + " pontos",
+        40,
+        alturaTela - 55
+    );
+
+    
+    fonte.getData().setScale(1.0f);
+    fonte.setColor(Color.WHITE);
+
+    batch.end();
+}
 
     @Override
     public void resize(int width, int height) {
@@ -312,5 +425,9 @@ public class FirstScreen implements Screen {
     public void dispose() {
         batch.dispose();
         caramelo.dispose();
+        if (shapeRenderer != null) {
+            shapeRenderer.dispose();
+        }
     }
 }
+
