@@ -4,23 +4,19 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 
 public class Obstaculo {
+    private final Texture textura;
+    private final Sprite sprite;
+    private final float posicaoOriginalY;
 
-    private Sprite sprite;
-    private Texture textura;
-
-    public Obstaculo(float x, float y) {
-        textura = new Texture("cone.png");
+    public Obstaculo(String arquivo, float posicaoX, float posicaoY, float largura, float altura) {
+        textura = new Texture(arquivo);
         sprite = new Sprite(textura);
-
-        sprite.setPosition(x, y);
-        sprite.setSize(100, 100);
+        sprite.setSize(largura, altura);
+        sprite.setPosition(posicaoX, posicaoY);
+        posicaoOriginalY = posicaoY;
     }
 
-    public Sprite getSprite() {
-        return sprite;
-    }
-
-    public void dispose() {
-        textura.dispose();
-    }
+    public Sprite getSprite() { return sprite; }
+    public float getPosicaoOriginalY() { return posicaoOriginalY; }
+    public void dispose() { textura.dispose(); }
 }

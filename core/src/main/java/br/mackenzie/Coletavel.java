@@ -4,23 +4,16 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 
 public class Coletavel {
+    private final Texture textura;
+    private final Sprite sprite;
 
-    private Sprite sprite;
-    private Texture textura;
-
-    public Coletavel(float x, float y) {
+    public Coletavel(float posicaoX, float posicaoY) {
         textura = new Texture("ossinho.png");
         sprite = new Sprite(textura);
-
-        sprite.setPosition(x, y);
-        sprite.setSize(70, 70);
+        sprite.setSize(28, 28);
+        sprite.setPosition(posicaoX, posicaoY);
     }
 
-    public Sprite getSprite() {
-        return sprite;
-    }
-
-    public void dispose() {
-        textura.dispose();
-    }
+    public Sprite getSprite() { return sprite; }
+    public void dispose() { textura.dispose(); }
 }
