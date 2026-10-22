@@ -18,7 +18,7 @@ public class AgenteCaptura {
 
     public AgenteCaptura() {
         Array<TextureRegion> quadros = new Array<TextureRegion>();
-        for (int i = 1; i <= 7; i++) {
+        for (int i = 4; i <= 6; i++) {
             Texture textura = new Texture("agente/correndo_direita_" + i + ".png");
             textura.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
             texturas.add(textura);
@@ -37,13 +37,19 @@ public class AgenteCaptura {
                 ativo = true;
                 direita = Math.random() >= 0.5;
                 velocidadeX = (direita ? 1 : -1) * (220 + fase * 35);
-                sprite.setX(direita ? -160 : 970);
+                sprite.setX(direita ? 245 : 670);
                 sprite.setY(250 + (float)Math.random() * 260);
                 espera = Math.max(2.5f, 7f - fase * 1.2f) + (float)Math.random() * 3f;
             }
         } else {
             sprite.setX(sprite.getX() + velocidadeX * delta);
-            if ((velocidadeX > 0 && sprite.getX() > 980) || (velocidadeX < 0 && sprite.getX() < -180)) ativo = false;
+            if (velocidadeX > 0 && sprite.getX() + sprite.getWidth() >= 700) {
+                sprite.setX(700 - sprite.getWidth());
+                ativo = false;
+            } else if (velocidadeX < 0 && sprite.getX() <= 235) {
+                sprite.setX(235);
+                ativo = false;
+            }
         }
     }
 

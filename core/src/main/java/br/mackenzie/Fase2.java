@@ -12,22 +12,19 @@ public class Fase2 implements ConfiguracaoFase {
         return 300f;
     }
 
-    @Override
     public float getDistanciaNecessaria() {
         return 3000f;
     }
 
-    @Override
     public Obstaculo[] criarCones() {
         return new Obstaculo[] {
-            new Obstaculo(800, 80),
-            new Obstaculo(1300, 80),
-            new Obstaculo(1900, 80),
-            new Obstaculo(2500, 80)
+            new Obstaculo("cone.png", 800, 80, 54, 54),
+            new Obstaculo("cone.png", 1300, 80, 54, 54),
+            new Obstaculo("cone.png", 1900, 80, 54, 54),
+            new Obstaculo("cone.png", 2500, 80, 54, 54)
         };
     }
 
-    @Override
     public Coletavel[] criarOssinhos() {
         return new Coletavel[] {
             new Coletavel(500, 120),
@@ -39,7 +36,6 @@ public class Fase2 implements ConfiguracaoFase {
         };
     }
 
-    @Override
     public void reiniciarObjetos(Obstaculo[] cones, Coletavel[] ossinhos) {
         float[] posicoesCones = {800, 1300, 1900, 2500};
         for (int i = 0; i < cones.length; i++) {
@@ -51,5 +47,9 @@ public class Fase2 implements ConfiguracaoFase {
         for (int i = 0; i < ossinhos.length; i++) {
             ossinhos[i].getSprite().setPosition(posicoesX[i], posicoesY[i]);
         }
+    }
+    @Override
+    public String[] getTiposObstaculos() {
+        return new String[] {"cone.png"};
     }
 }

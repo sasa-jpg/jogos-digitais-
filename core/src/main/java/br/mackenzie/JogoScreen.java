@@ -60,15 +60,15 @@ public class JogoScreen implements Screen {
         // Cada grupo fica em uma faixa fixa do mapa; a tela avanca sobre o mapa.
         for (int i=0; i<quantidade; i++) {
             float y = 420 + i * (fase == 1 ? 145 : fase == 2 ? 125 : 108);
-            float[] faixas = {185, 350, 515, 680};
-            int faixa = aleatorio.nextInt(faixas.length);
             String arquivo = tipos[aleatorio.nextInt(tipos.length)];
             float w=54,h=54;
             if (arquivo.equals("tronco.png")) { w=105; h=48; }
             if (arquivo.equals("caixa.png")) { w=58; h=55; }
             if (arquivo.equals("bueiro_aberto.png")) { w=78; h=50; }
-            // Alternar faixas impede uma parede completa de obstáculos.
-            float x = faixas[faixa];
+            // A estrada e mais estreita no topo e mais larga perto do jogador.
+            float limiteEsquerdo = limiteEsquerdoEstrada(y) + 18;
+            float limiteDireito = limiteDireitoEstrada(y) - w - 18;
+            float x = limiteEsquerdo + aleatorio.nextFloat() * Math.max(1, limiteDireito - limiteEsquerdo);
             obstaculos.add(new Obstaculo(arquivo, x, y, w, h));
             posicoesObstaculos.add(y);
             obstaculosEncontrados++;
@@ -80,13 +80,17 @@ public class JogoScreen implements Screen {
         desenhar(); tratarInterface();
     }
     private void atualizar(float delta) {
+        caramelo.atualizar(delta);
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) caramelo.moverPara(caramelo.getSprite().getX()-260*delta);
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) caramelo.moverPara(caramelo.getSprite().getX()+260*delta);
         invulneravel=Math.max(0,invulneravel-delta);
         progresso += configuracao.getVelocidade()*delta*0.55f;
         agente.atualizar(delta,fase);
         tempoOssinho += delta;
-        if (tempoOssinho > 4f) { ossinhos.add(new Coletavel(100+aleatorio.nextInt(730), altura+progresso+30)); tempoOssinho=0; }
+        if (tempoOssinho > 4f) {
+            criarOssinhoSemObstaculo();
+            tempoOssinho=0;
+        }
         for (int i=obstaculos.size()-1;i>=0;i--) {
             Obstaculo o=obstaculos.get(i); float y=o.getPosicaoOriginalY()-progresso;
             o.getSprite().setY(y);
@@ -105,12 +109,63 @@ public class JogoScreen implements Screen {
             if (fase<3) { fase++; carregarFase(); } else estado="conclusao";
         }
     }
+    // Limites aproximados da estrada na imagem parada, conforme a perspectiva.
+    private float limiteEsquerdoEstrada(float y) {
+        float proporcao = Math.max(0, Math.min(1, y / altura));
+        return 170 + 180 * proporcao;
+    }
+    private float limiteDireitoEstrada(float y) {
+        float proporcao = Math.max(0, Math.min(1, y / altura));
+        return 820 - 180 * proporcao;
+    }
+    private void criarOssinhoSemObstaculo() {
+        float y = altura + progresso + 30;
+        float larguraOssinho = 28;
+        float minimoX = limiteEsquerdoEstrada(altura - 10) + 20;
+        float maximoX = limiteDireitoEstrada(altura - 10) - larguraOssinho - 20;
+        for (int tentativa = 0; tentativa < 20; tentativa++) {
+            float x = minimoX + aleatorio.nextFloat() * Math.max(1, maximoX - minimoX);
+            boolean livre = true;
+            // Compara as areas no mapa, antes de criar o ossinho.
+            Rectangle areaOssinho = new Rectangle(x, y, larguraOssinho, larguraOssinho);
+            for (Obstaculo obstaculo : obstaculos) {
+                Rectangle areaObstaculo = new Rectangle(
+                    obstaculo.getSprite().getX(),
+                    obstaculo.getPosicaoOriginalY(),
+                    obstaculo.getSprite().getWidth(),
+                    obstaculo.getSprite().getHeight()
+                );
+                // Deixa uma margem extra para o ossinho nao ficar escondido atras do obstaculo.
+                areaObstaculo.set(areaObstaculo.x - 24, areaObstaculo.y - 42,
+                    areaObstaculo.width + 48, areaObstaculo.height + 84);
+                if (areaOssinho.overlaps(areaObstaculo)) {
+                    livre = false;
+                    break;
+                }
+            }
+            for (Coletavel existente : ossinhos) {
+                Rectangle areaExistente = existente.getSprite().getBoundingRectangle();
+                areaExistente.set(areaExistente.x - 18, areaExistente.y - 35,
+                    areaExistente.width + 36, areaExistente.height + 70);
+                if (areaOssinho.overlaps(areaExistente)) {
+                    livre = false;
+                    break;
+                }
+            }
+            if (livre) {
+                ossinhos.add(new Coletavel(x, y));
+                return;
+            }
+        }
+        // Se nao houver espaco seguro, pula esta geracao em vez de esconder o ossinho.
+    }
+
     private void desenhar() {
         Gdx.gl.glClearColor(0.95f,0.89f,0.78f,1); Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         lote.begin();
         if (fundo!=null) {
-            // O fundo e uma imagem vertical unica para evitar a emenda no meio da tela.
-            lote.draw(fundo, 0, -progresso, largura, fundo.getHeight());
+            // O fundo fica parado durante toda a fase.
+            lote.draw(fundo, 0, 0, largura, altura);
         }
         for (Obstaculo o:obstaculos) if (o.getSprite().getY()>-100 && o.getSprite().getY()<altura+80) o.getSprite().draw(lote);
         for (Coletavel o:ossinhos) o.getSprite().draw(lote);
