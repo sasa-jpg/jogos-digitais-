@@ -20,8 +20,9 @@ public class Caramelo {
 
     public Sprite getSprite() { return sprite; }
 
-    public void atualizar(float delta) {
-        tempoAnimacao += delta;
+    /** ritmo = 1 na velocidade inicial; maior = patas se mexem mais rapido. */
+    public void atualizar(float delta, float ritmo) {
+        tempoAnimacao += delta * ritmo;
         if (tempoAnimacao >= 0.22f) {
             tempoAnimacao = 0;
             segundoQuadro = !segundoQuadro;
