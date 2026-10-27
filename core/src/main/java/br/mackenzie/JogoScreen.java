@@ -60,6 +60,7 @@ public class JogoScreen implements Screen {
     private final Rectangle botaoVoltarMenuFim = new Rectangle();
     private float topoPergaminhoFim;
     private String telaAnterior = "menu";
+    private ControleIoT controle; // sensor ESP32 + MPU6050 (alternativa ao teclado)
 
     public void show() {
         camera = new OrthographicCamera(); tela = new FitViewport(largura, altura, camera);
@@ -84,6 +85,7 @@ public class JogoScreen implements Screen {
         texCoracaoVazio = carregarImagemMenu("hud/hud_coracao_vazio.png");
         texOsso = carregarImagemMenu("ossinho.png");
         caramelo = new Caramelo(); carregarFase();
+        controle = new ControleIoT(); controle.iniciar();
     }
     private Texture carregarImagemMenu(String arquivo) {
         Texture t = new Texture(Gdx.files.internal(arquivo));
@@ -129,8 +131,13 @@ public class JogoScreen implements Screen {
     }
     private void atualizar(float delta) {
         caramelo.atualizar(delta, configuracao.getVelocidade() / 190f);
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) caramelo.moverPara(caramelo.getSprite().getX()-configuracao.getVelocidadeCaramelo()*delta);
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) caramelo.moverPara(caramelo.getSprite().getX()+configuracao.getVelocidadeCaramelo()*delta);
+        // Direcao: -1 esquerda, +1 direita. Teclado tem prioridade; sem tecla, vale o sensor.
+        float direcao = 0;
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) direcao -= 1;
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) direcao += 1;
+        boolean teclado = Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.RIGHT);
+        if (!teclado && controle != null) direcao = controle.getDirecao();
+        if (direcao != 0) caramelo.moverPara(caramelo.getSprite().getX()+direcao*configuracao.getVelocidadeCaramelo()*delta);
         invulneravel=Math.max(0,invulneravel-delta);
         progresso += configuracao.getVelocidade()*delta*0.55f;
         tempoOssinho += delta;
@@ -366,6 +373,11 @@ public class JogoScreen implements Screen {
         medidaTexto.setText(fonteBonita, "ESC: pausar");
         float larg = medidaTexto.width * 0.4f;
         textoEsquerda("ESC: pausar", largura - 16 - larg, altura - 12, 0.4f, new Color(1f, 0.96f, 0.82f, 1f));
+        if (controle != null) { // status do sensor IoT
+            String statusIoT = "C: calibrar | " + controle.getTextoStatus();
+            medidaTexto.setText(fonteBonita, statusIoT);
+            textoEsquerda(statusIoT, largura - 16 - medidaTexto.width * 0.4f, altura - 36, 0.4f, new Color(1f, 0.96f, 0.82f, 1f));
+        }
         lote.end();
     }
     private void textoEsquerda(String texto, float x, float topo, float escala, Color cor) {
@@ -447,7 +459,8 @@ public class JogoScreen implements Screen {
     private String nomeFase() { return fase==1?"Cidade":fase==2?"Floresta":"Montanhas"; }
     private void tratarInterface() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { if (estado.equals("jogando")) estado="pausa"; else if (estado.equals("pausa")) estado="jogando"; else if (estado.equals("instrucoes")) estado="menu"; }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) { if (estado.equals("menu")) estado="jogando"; else if (estado.equals("pausa")) estado="jogando"; else if (estado.equals("fim")||estado.equals("conclusao")) reiniciarJogo(); }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) { if (estado.equals("menu")) { estado="jogando"; calibrarControle(); } else if (estado.equals("pausa")) estado="jogando"; else if (estado.equals("fim")||estado.equals("conclusao")) reiniciarJogo(); }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) calibrarControle(); // recalibra o sensor
         if (estado.equals("menu")) tratarMenu();
         else if (estado.equals("pausa")) tratarPausa();
         else if (estado.equals("fim")) tratarFim();
@@ -457,11 +470,13 @@ public class JogoScreen implements Screen {
             if (estado.equals("conclusao")) { if (y>=290 && y<=340) reiniciarJogo(); else if (y>=220 && y<=270) estado="menu"; }
         }
     }
-    private void reiniciarJogo() { fase=1; pontos=0; vidas=3; obstaculosSuperados=0; obstaculosEncontrados=0; estado="jogando"; carregarFase(); }
+    private void reiniciarJogo() { fase=1; pontos=0; vidas=3; obstaculosSuperados=0; obstaculosEncontrados=0; estado="jogando"; carregarFase(); calibrarControle(); }
+    private void calibrarControle() { if (controle != null) controle.iniciarCalibracao(); }
     private void limparObjetos() { for(Obstaculo o:obstaculos)o.dispose(); for(Coletavel o:ossinhos)o.dispose(); obstaculos.clear(); ossinhos.clear(); posicoesObstaculos.clear(); }
     public void resize(int w,int h) { tela.update(w,h,true); }
     public void pause() { if(estado.equals("jogando"))estado="pausa"; }
     public void resume() { }
-    public void hide() { }
-    public void dispose() { limparObjetos(); if(fundo!=null)fundo.dispose(); if(caramelo!=null)caramelo.dispose(); if(lote!=null)lote.dispose(); if(fonte!=null)fonte.dispose(); if(formas!=null)formas.dispose(); if(texPainel!=null)texPainel.dispose(); if(texJogar!=null)texJogar.dispose(); if(texInstrucoes!=null)texInstrucoes.dispose(); if(texSair!=null)texSair.dispose(); if(texVoltar!=null)texVoltar.dispose(); if(texPausaPainel!=null)texPausaPainel.dispose(); if(texContinuar!=null)texContinuar.dispose(); if(texTentar!=null)texTentar.dispose(); if(texVoltarMenu!=null)texVoltarMenu.dispose(); if(texFimPainel!=null)texFimPainel.dispose(); if(fonteBonita!=null)fonteBonita.dispose(); if(texHud!=null)texHud.dispose(); if(texCoracaoCheio!=null)texCoracaoCheio.dispose(); if(texCoracaoVazio!=null)texCoracaoVazio.dispose(); if(texOsso!=null)texOsso.dispose(); }
+    // Game.dispose() chama hide() (nao chama dispose() da tela), por isso a porta COM e fechada aqui tambem.
+    public void hide() { if (controle != null) controle.fechar(); }
+    public void dispose() { if(controle!=null)controle.fechar(); limparObjetos(); if(fundo!=null)fundo.dispose(); if(caramelo!=null)caramelo.dispose(); if(lote!=null)lote.dispose(); if(fonte!=null)fonte.dispose(); if(formas!=null)formas.dispose(); if(texPainel!=null)texPainel.dispose(); if(texJogar!=null)texJogar.dispose(); if(texInstrucoes!=null)texInstrucoes.dispose(); if(texSair!=null)texSair.dispose(); if(texVoltar!=null)texVoltar.dispose(); if(texPausaPainel!=null)texPausaPainel.dispose(); if(texContinuar!=null)texContinuar.dispose(); if(texTentar!=null)texTentar.dispose(); if(texVoltarMenu!=null)texVoltarMenu.dispose(); if(texFimPainel!=null)texFimPainel.dispose(); if(fonteBonita!=null)fonteBonita.dispose(); if(texHud!=null)texHud.dispose(); if(texCoracaoCheio!=null)texCoracaoCheio.dispose(); if(texCoracaoVazio!=null)texCoracaoVazio.dispose(); if(texOsso!=null)texOsso.dispose(); }
 }
