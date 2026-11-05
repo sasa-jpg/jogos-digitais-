@@ -1,6 +1,5 @@
 package br.mackenzie;
 
-/** Fase 1: cidade. Ritmo tranquilo para aprender os controles. */
 public class FaseCidade implements ConfiguracaoFase {
     public float getVelocidade() { return 190f; }
     public float getVelocidadeCaramelo() { return 260f; }

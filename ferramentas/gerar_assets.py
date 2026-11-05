@@ -8,11 +8,10 @@ from PIL import Image, ImageDraw, ImageFilter, ImageChops
 
 W, H = 960, 720
 ESQ, DIR = 170, 790
-S = 4  # supersampling dos sprites
+S = 4
 os.makedirs("assets/fundo", exist_ok=True); os.makedirs("assets/decor", exist_ok=True); os.makedirs("assets/vivo", exist_ok=True)
 D = "assets/decor/"; F = "assets/fundo/"; V = "assets/vivo/"
 
-# ---------------------------------------------------------------- utilidades
 def wrap_draw(fn, y, ext):
     for off in (-H, 0, H):
         if -ext <= y + off <= H + ext:
@@ -51,14 +50,12 @@ def copa(d, cx, cy, r, base, claro, escuro, n=14, seed=None):
         q = r*0.22
         d.ellipse([(x-q)*S, (y-q)*S, (x+q)*S, (y+q)*S], fill=claro)
 
-# periodico: desenha em 3 copias verticais, aplica filtro e recorta o miolo (sem emenda)
 def tile_suave(desenhar, raio):
     big = Image.new("RGB", (W, H*3))
     desenhar(big, ImageDraw.Draw(big))
     big = big.filter(ImageFilter.GaussianBlur(raio))
     return big.crop((0, H, W, H*2))
 
-# ================================================================ CIDADE (mantida)
 def tile_cidade():
     random.seed(7)
     im = Image.new("RGB", (W, H), (205, 196, 190)); d = ImageDraw.Draw(im)
@@ -122,12 +119,11 @@ def vaso(nome, w=60, h=60):
     copa(d, w/2, 26, 22, (80, 170, 60), (240, 110, 150), (45, 115, 45), n=9)
     fim(im, w, h).save(nome)
 
-# ================================================================ FLORESTA
 def tile_floresta():
     random.seed(11)
     musgo = (46, 104, 46)
     im = Image.new("RGB", (W, H), musgo); d = ImageDraw.Draw(im)
-    # grama em varias camadas de verde
+
     for _ in range(700):
         blot(d, random.randint(0, W), random.randint(0, H-1), random.randint(10, 34), random.randint(8, 24),
              random.choice([(38, 92, 44), (54, 120, 50), (62, 132, 54), (34, 84, 48), (70, 140, 58)]))
@@ -137,30 +133,30 @@ def tile_floresta():
         return base + 13*math.sin(k*2*y + (0.7 if lado else 0)) + 8*math.sin(k*5*y + 1.3) + 4*math.sin(k*11*y)
     esq = [(borda(y, 0), y) for y in range(-20, H+21, 5)]
     dire = [(borda(y, 1), y) for y in range(H+20, -21, -5)]
-    # faixa de terra escura (sombra) e terra
+
     d.polygon([(x-14, y) for x, y in esq] + [(x+14, y) for x, y in dire], fill=(60, 78, 40))
     d.polygon([(x-5, y) for x, y in esq] + [(x+5, y) for x, y in dire], fill=(150, 96, 52))
     d.polygon(esq + dire, fill=(196, 132, 68))
-    # centro mais pisado / claro
+
     cl = [(borda(y, 0)+70, y) for y in range(-20, H+21, 5)]; cd = [(borda(y, 1)-70, y) for y in range(H+20, -21, -5)]
     d.polygon(cl + cd, fill=(206, 142, 76))
     for _ in range(1000):
         y = random.randint(0, H-1)
         blot(d, random.randint(int(borda(y, 0))+6, int(borda(y, 1))-6), y, random.randint(2, 7), random.randint(2, 4),
              vary((198, 134, 70), 18))
-    # musgo invadindo a borda da trilha
+
     for _ in range(60):
         y = random.randint(0, H-1); lado = random.randint(0, 1)
         x = borda(y, lado) + (random.randint(4, 24) if lado == 0 else -random.randint(4, 24))
         blot(d, x, y, random.randint(5, 12), random.randint(4, 9), random.choice([(70, 130, 52), (88, 150, 60)]))
-    # manchas de luz (clareira) e sombra de copas
+
     for _ in range(12):
         y = random.randint(0, H-1)
         blot(d, random.randint(int(borda(y, 0))+30, int(borda(y, 1))-30), y, random.randint(26, 60), random.randint(10, 22), (222, 164, 92))
     for _ in range(14):
         y = random.randint(0, H-1)
         blot(d, random.randint(int(borda(y, 0))+10, int(borda(y, 1))-10), y, random.randint(20, 46), random.randint(9, 18), (160, 98, 52))
-    # raizes cruzando a borda
+
     for _ in range(9):
         y = random.randint(20, H-20); lado = random.randint(0, 1)
         x0 = borda(y, lado); sinal = 1 if lado == 0 else -1
@@ -170,12 +166,12 @@ def tile_floresta():
         for off in (-H, 0, H):
             d.line([(px, py+off) for px, py in pts], fill=(110, 68, 34), width=6)
             d.line([(px, py+off-2) for px, py in pts], fill=(150, 98, 50), width=2)
-    # folhas secas
+
     for _ in range(170):
         y = random.randint(0, H-1); x = random.randint(40, W-40)
         cor = random.choice([(222, 150, 40), (190, 80, 32), (236, 190, 60), (150, 60, 30)])
         blot(d, x, y, random.randint(2, 4), random.randint(1, 3), cor)
-    # pedrinhas e flores
+
     for _ in range(26):
         y = random.randint(0, H-1); x = random.randint(int(borda(y, 0))+10, int(borda(y, 1))-10)
         blot(d, x, y, 5, 4, (96, 90, 84)); blot(d, x, y-1, 4, 3, (150, 146, 140))
@@ -188,7 +184,7 @@ def tile_floresta():
 def arvore_grande(nome, w=190, h=200):
     im = novo(w, h); d = ImageDraw.Draw(im)
     sombra_elipse(d, w/2+14, h-18, w*0.34, 14, 85)
-    # raizes + tronco
+
     for lado in (-1, 1):
         d.polygon([((w/2)*S, (h-38)*S), ((w/2+lado*26)*S, (h-12)*S), ((w/2+lado*10)*S, (h-12)*S), ((w/2)*S, (h-28)*S)], fill=(98, 62, 32))
     d.rectangle([(w/2-12)*S, (h*0.5)*S, (w/2+12)*S, (h-22)*S], fill=(112, 70, 36))
@@ -205,7 +201,7 @@ def pinheiro(nome, w=70, h=120, tons=((30, 110, 50), (36, 128, 56), (46, 146, 62
     for (top, bot, half), cor in zip(camadas, tons):
         d.polygon([(w/2*S, top*S), ((w/2-half)*S, bot*S), ((w/2+half)*S, bot*S)], fill=cor)
         d.polygon([(w/2*S, top*S), (w/2*S, bot*S), ((w/2+half)*S, bot*S)], fill=escurece(cor, 24))
-        if neve:  # capa de neve em cada andar + borda irregular
+        if neve:
             alt = (bot-top)*0.55
             d.polygon([(w/2*S, top*S), ((w/2-half*0.62)*S, (top+alt)*S), ((w/2-half*0.2)*S, (top+alt*0.78)*S),
                        ((w/2+half*0.1)*S, (top+alt*0.95)*S), ((w/2+half*0.62)*S, (top+alt)*S)], fill=(246, 250, 255))
@@ -248,7 +244,7 @@ def tronco_caido(nome, w=124, h=48):
         d.line([x*S, 12*S, (x+4)*S, (h-14)*S], fill=(86, 54, 28), width=S)
     d.ellipse([4*S, 6*S, 26*S, (h-10)*S], fill=(206, 156, 98)); d.ellipse([9*S, 12*S, 21*S, (h-16)*S], fill=(176, 126, 74))
     for cx in (50, 78, 100):
-        d.ellipse([(cx-12)*S, 6*S, (cx+12)*S, 17*S], fill=(70, 140, 54))   # musgo
+        d.ellipse([(cx-12)*S, 6*S, (cx+12)*S, 17*S], fill=(70, 140, 54))
     fim(im, w, h).save(nome)
 
 def pedra_musgo(nome, w=88, h=74):
@@ -296,11 +292,10 @@ def toco(nome, w=60, h=64):
     d.ellipse([22*S, 21*S, (w-22)*S, 27*S], fill=(150, 100, 56))
     fim(im, w, h).save(nome)
 
-# ================================================================ ALPES (neve)
 def tile_alpes():
     random.seed(21)
     NEVE = (238, 244, 252)
-    # base: neve com ondulacoes azuladas suaves (periodico + blur)
+
     def base(big, d):
         d.rectangle([0, 0, W, H*3], fill=NEVE)
         for _ in range(260):
@@ -315,7 +310,7 @@ def tile_alpes():
         k = 2*math.pi/H
         b = 176 if lado == 0 else 784
         return b + 14*math.sin(k*2*y + (0.9 if lado else 0)) + 8*math.sin(k*4*y + 0.4)
-    # trilha (neve batida) com borda suave
+
     mask = Image.new("L", (W, H*3), 0); md = ImageDraw.Draw(mask)
     for k in range(3):
         e = [(borda(y, 0), y + k*H) for y in range(-20, H+21, 5)]
@@ -330,7 +325,7 @@ def tile_alpes():
              random.choice([(214, 224, 241), (230, 237, 248), (208, 219, 238)]))
     trilha = trilha.filter(ImageFilter.GaussianBlur(2))
     td = ImageDraw.Draw(trilha)
-    # sombra suave da beirada (volume da neve acumulada)
+
     sombra = Image.new("L", (W, H*3), 0); sd = ImageDraw.Draw(sombra)
     for k in range(3):
         for lado in (0, 1):
@@ -341,20 +336,20 @@ def tile_alpes():
     im = Image.composite(azul, im, sombra.point(lambda v: int(v*0.55)))
     im = Image.composite(trilha, im, mask)
     d = ImageDraw.Draw(im)
-    # sulcos de trenó/pegadas: duas linhas onduladas
+
     for off in (-34, 34):
         for kk in (-H, 0, H):
             pts = [(480 + off + 18*math.sin(2*math.pi*y/H*2 + 0.5) , y + kk) for y in range(-20, H+21, 4)]
             d.line(pts, fill=(190, 204, 226), width=6); d.line([(x+2, y) for x, y in pts], fill=(236, 242, 252), width=2)
-    # pegadas de patinhas (duplas alternadas)
+
     for i, y in enumerate(range(20, H, 46)):
         x = 480 + 18*math.sin(2*math.pi*y/H*2 + 0.5) + (-9 if i % 2 else 9)
         blot(d, x, y, 4, 3, (176, 192, 218)); blot(d, x-5, y-5, 1.5, 1.5, (176, 192, 218)); blot(d, x+5, y-5, 1.5, 1.5, (176, 192, 218))
-    # cascalho / terra aparecendo
+
     for _ in range(40):
         y = random.randint(0, H-1); x = random.randint(int(borda(y, 0))+14, int(borda(y, 1))-14)
         blot(d, x, y, random.randint(2, 5), random.randint(2, 3), random.choice([(120, 126, 140), (142, 132, 120)]))
-    # brilhos de gelo (estrelinhas)
+
     for _ in range(190):
         x = random.randint(0, W-1); y = random.randint(0, H-1)
         def estrela(yy, x=x):
@@ -370,11 +365,11 @@ def rocha_gelo(nome, w=140, h=120, escala_neve=1.0):
     d.polygon(P, fill=(118, 128, 150))
     d.polygon([P[1], P[2], P[3], (w*0.5*S, h*0.5*S)], fill=(150, 162, 184))
     d.polygon([P[4], P[5], P[6], (w*0.52*S, h*0.55*S)], fill=(86, 96, 120))
-    d.polygon([P[2], P[3], P[4], (w*0.74*S, h*0.34*S), (w*0.5*S, h*0.4*S), (w*0.3*S, h*0.34*S)], fill=(248, 251, 255))  # neve no topo
+    d.polygon([P[2], P[3], P[4], (w*0.74*S, h*0.34*S), (w*0.5*S, h*0.4*S), (w*0.3*S, h*0.34*S)], fill=(248, 251, 255))
     d.polygon([P[3], P[4], (w*0.74*S, h*0.34*S), (w*0.52*S, h*0.2*S)], fill=(208, 224, 244))
     d.line([(w*0.38*S, h*0.5*S), (w*0.46*S, h*0.74*S)], fill=(92, 104, 130), width=2*S)
     d.line(P + [P[0]], fill=(76, 86, 108), width=2*S)
-    # reflexo de gelo
+
     d.polygon([(w*0.62*S, h*0.55*S), (w*0.74*S, h*0.5*S), (w*0.7*S, h*0.7*S)], fill=(150, 196, 232))
     fim(im, w, h).save(nome)
 
@@ -389,17 +384,17 @@ def monte_neve(nome, w=96, h=54):
 def chale(nome, w=130, h=130):
     im = novo(w, h); d = ImageDraw.Draw(im)
     sombra_elipse(d, w/2+10, h-12, w*0.42, 12, 90)
-    d.rectangle([10*S, 30*S, (w-10)*S, (h-18)*S], fill=(116, 74, 40))          # parede lateral
+    d.rectangle([10*S, 30*S, (w-10)*S, (h-18)*S], fill=(116, 74, 40))
     d.rectangle([10*S, (h-34)*S, (w-10)*S, (h-18)*S], fill=(92, 58, 32))
     for x in range(14, w-10, 12):
         d.line([x*S, (h-34)*S, x*S, (h-18)*S], fill=(70, 44, 24), width=S)
-    d.rectangle([(w/2-9)*S, (h-36)*S, (w/2+9)*S, (h-18)*S], fill=(60, 38, 22))   # porta
-    d.rectangle([(w/2+22)*S, (h-32)*S, (w/2+38)*S, (h-22)*S], fill=(250, 214, 120))  # janela acesa
-    d.polygon([(4*S, 36*S), (w/2*S, 2*S), ((w-4)*S, 36*S), ((w-4)*S, (h-36)*S), (4*S, (h-36)*S)], fill=(150, 92, 56))  # telhado
+    d.rectangle([(w/2-9)*S, (h-36)*S, (w/2+9)*S, (h-18)*S], fill=(60, 38, 22))
+    d.rectangle([(w/2+22)*S, (h-32)*S, (w/2+38)*S, (h-22)*S], fill=(250, 214, 120))
+    d.polygon([(4*S, 36*S), (w/2*S, 2*S), ((w-4)*S, 36*S), ((w-4)*S, (h-36)*S), (4*S, (h-36)*S)], fill=(150, 92, 56))
     d.polygon([(w/2*S, 2*S), ((w-4)*S, 36*S), ((w-4)*S, (h-36)*S), (w/2*S, (h-60)*S)], fill=(126, 76, 46))
-    d.polygon([(8*S, 38*S), (w/2*S, 6*S), ((w-8)*S, 38*S), ((w-12)*S, 52*S), (w/2*S, 30*S), (12*S, 52*S)], fill=(248, 251, 255))  # neve no telhado
+    d.polygon([(8*S, 38*S), (w/2*S, 6*S), ((w-8)*S, 38*S), ((w-12)*S, 52*S), (w/2*S, 30*S), (12*S, 52*S)], fill=(248, 251, 255))
     d.polygon([(w/2*S, 6*S), ((w-8)*S, 38*S), ((w-12)*S, 52*S), (w/2*S, 30*S)], fill=(214, 228, 246))
-    d.rectangle([(w-40)*S, 4*S, (w-28)*S, 26*S], fill=(110, 80, 70)); d.rectangle([(w-42)*S, 2*S, (w-26)*S, 8*S], fill=(246, 250, 255))  # chamine
+    d.rectangle([(w-40)*S, 4*S, (w-28)*S, 26*S], fill=(110, 80, 70)); d.rectangle([(w-42)*S, 2*S, (w-26)*S, 8*S], fill=(246, 250, 255))
     fim(im, w, h).save(nome)
 
 def boneco_neve(nome, w=52, h=80):
@@ -411,10 +406,9 @@ def boneco_neve(nome, w=52, h=80):
     for dx in (-3.5, 3.5):
         d.ellipse([(w/2+dx-1.2)*S, (h-67)*S, (w/2+dx+1.2)*S, (h-64.6)*S], fill=(30, 30, 40))
     d.polygon([((w/2)*S, (h-64)*S), ((w/2+9)*S, (h-62)*S), ((w/2)*S, (h-61)*S)], fill=(238, 120, 30))
-    d.rectangle([(w/2-10)*S, (h-58)*S, (w/2+10)*S, (h-54)*S], fill=(200, 40, 50))   # cachecol
+    d.rectangle([(w/2-10)*S, (h-58)*S, (w/2+10)*S, (h-54)*S], fill=(200, 40, 50))
     fim(im, w, h).save(nome)
 
-# ================================================================ EFEITOS VIVOS
 def sombra_nuvem(nome, w=300, h=170, seed=1):
     r = random.Random(seed)
     m = Image.new("L", (w, h), 0); d = ImageDraw.Draw(m)
@@ -453,30 +447,30 @@ def raio_luz(nome, w=150, h=640):
     m = Image.new("L", (w*2, h), 0); d = ImageDraw.Draw(m)
     d.polygon([(w*0.9, 0), (w*1.35, 0), (w*0.55, h), (w*0.08, h)], fill=255)
     m = m.filter(ImageFilter.GaussianBlur(20))
-    # esmaece no comprimento (mais forte no topo)
+
     grad = Image.linear_gradient("L").resize((w*2, h)).transpose(Image.FLIP_TOP_BOTTOM)
     m = ImageChops.multiply(m, grad.point(lambda v: int(v*0.9 + 20)))
     im = Image.new("RGBA", (w*2, h), (255, 244, 190, 0)); im.putalpha(m); im.save(nome)
 
 if __name__ == "__main__":
-    # cidade
+
     tile_cidade().save(F+"rua_cidade.png")
     arvore(D+"cidade_arvore.png"); poste(D+"cidade_poste.png"); hidrante(D+"cidade_hidrante.png")
     banco(D+"cidade_banco.png"); vaso(D+"cidade_vaso.png")
-    # floresta
+
     tile_floresta().save(F+"trilha_floresta.png")
     arvore_grande(D+"floresta_arvore_grande.png")
     arvore(D+"floresta_arvore.png", 130, 140, (44, 128, 62), (104, 186, 74), (24, 82, 46), n=16)
     pinheiro(D+"floresta_pinheiro.png"); samambaia(D+"floresta_samambaia.png"); cogumelos(D+"floresta_cogumelos.png")
     tronco_caido(D+"floresta_tronco_caido.png"); pedra_musgo(D+"floresta_pedra_musgo.png"); flores(D+"floresta_flores.png")
     arbusto(D+"floresta_arbusto.png", base=(60, 148, 56), claro=(130, 204, 76), escuro=(34, 96, 46)); toco(D+"floresta_toco.png")
-    # alpes
+
     tile_alpes().save(F+"trilha_alpes.png")
     pinheiro(D+"alpes_pinheiro_a.png", 84, 140, ((26, 86, 62), (30, 100, 68), (38, 116, 76)), neve=True)
     pinheiro(D+"alpes_pinheiro_b.png", 64, 108, ((24, 80, 58), (30, 96, 66), (36, 110, 74)), neve=True)
     rocha_gelo(D+"alpes_rocha.png"); rocha_gelo(D+"alpes_rocha_pequena.png", 76, 66)
     monte_neve(D+"alpes_monte_neve.png"); chale(D+"alpes_chale.png"); boneco_neve(D+"alpes_boneco_neve.png")
-    # efeitos
+
     sombra_nuvem(V+"sombra_nuvem_a.png", seed=1); sombra_nuvem(V+"sombra_nuvem_b.png", 360, 190, seed=4)
     passaro(V+"passaro_1.png", True); passaro(V+"passaro_2.png", False); folha(V+"folha.png")
     ponto_macio(V+"neve.png", 14, 3.2, 1.6); ponto_macio(V+"vaga_lume.png", 28, 3, 6)

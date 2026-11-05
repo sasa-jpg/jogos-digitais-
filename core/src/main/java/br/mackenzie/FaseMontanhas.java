@@ -1,6 +1,5 @@
 package br.mackenzie;
 
-/** Fase 3: Alpes nevados. A mais rapida e com obstaculos mais proximos. */
 public class FaseMontanhas implements ConfiguracaoFase {
     public float getVelocidade() { return 310f; }
     public float getVelocidadeCaramelo() { return 380f; }

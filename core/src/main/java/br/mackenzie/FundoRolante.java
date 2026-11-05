@@ -9,22 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-/**
- * Fundo vivo em camadas:
- *  1) chao: tile vertical que se repete sem emenda (rua / trilha na floresta / neve nos Alpes);
- *  2) decoracoes: sprites nas laterais que descem com a estrada e balancam com o vento;
- *  3) camada da frente: sombras de nuvens (parallax), passaros, e efeitos de cada fase
- *     (cidade: folhas | floresta: folhas, raios de luz e vaga-lumes | Alpes: neve caindo).
- *
- * O chao e as decoracoes usam o mesmo "progresso" dos obstaculos (ficam sincronizados).
- * Os efeitos vivos usam o proprio relogio (atualizar), entao tambem se mexem no menu.
- */
 public class FundoRolante {
-    /** Limites da estrada no tile (em pixels da tela de 960 x 720). */
+
     public static final float ESTRADA_ESQUERDA = 170f;
     public static final float ESTRADA_DIREITA = 790f;
 
-    /** Tipo de decoracao: arquivo, peso (chance de aparecer) e se balanca com o vento. */
     private static class Tipo {
         final String arquivo; final int peso; final boolean balanca;
         Tipo(String arquivo, int peso, boolean balanca) { this.arquivo = arquivo; this.peso = peso; this.balanca = balanca; }
@@ -64,10 +53,6 @@ public class FundoRolante {
     private final Color corPassaro;
     private float tempo = 0, esperaPassaro = 2f;
 
-    /**
-     * @param fase        1 = cidade, 2 = floresta, 3 = Alpes
-     * @param comprimento distancia total da fase (para gerar decoracoes ate o fim)
-     */
     public FundoRolante(int fase, float larguraTela, float alturaTela, float comprimento) {
         this.fase = fase;
         this.larguraTela = larguraTela;
@@ -81,7 +66,7 @@ public class FundoRolante {
         texParticula = carregar(fase == 3 ? "vivo/neve.png" : "vivo/folha.png");
         texRaio = fase == 2 ? carregar("vivo/raio_luz.png") : null;
         texVagaLume = fase == 2 ? carregar("vivo/vaga_lume.png") : null;
-        // Cor dos passaros de cada fase (o PNG e claro para poder ser tingido).
+
         if (fase == 1) corPassaro = new Color(0.50f, 0.54f, 0.66f, 1f);
         else if (fase == 2) corPassaro = new Color(0.85f, 0.35f, 0.28f, 1f);
         else corPassaro = new Color(0.28f, 0.32f, 0.42f, 1f);
@@ -97,7 +82,6 @@ public class FundoRolante {
         return "fundo/trilha_alpes.png";
     }
 
-    /** Edite aqui para trocar/adicionar sprites de cada fase. O 3o valor = balanca com o vento. */
     private static Tipo[] tiposDaFase(int fase) {
         if (fase == 1) return new Tipo[] {
             new Tipo("decor/cidade_arvore.png", 4, true), new Tipo("decor/cidade_poste.png", 3, false),
@@ -138,7 +122,7 @@ public class FundoRolante {
     }
 
     private void gerarDecoracoes(Tipo[] tipos, float ateY) {
-        // Uma "linha" a cada 70-150 px; em cada linha tenta um item na esquerda e outro na direita.
+
         for (float y = 0; y < ateY; y += 70f + aleatorio.nextFloat() * 80f) {
             for (int lado = 0; lado < 2; lado++) {
                 if (aleatorio.nextFloat() > 0.8f) continue;
@@ -151,7 +135,7 @@ public class FundoRolante {
                 item.largura = t.getWidth() * escala;
                 item.altura = t.getHeight() * escala;
                 item.yMundo = y + aleatorio.nextFloat() * 40f;
-                // A copa pode invadir um pouco a estrada (15 px) para parecer natural.
+
                 if (lado == 0) {
                     float minX = -item.largura * 0.15f;
                     float maxX = ESTRADA_ESQUERDA + 15f - item.largura;
@@ -175,15 +159,15 @@ public class FundoRolante {
             n.altura = n.textura.getHeight() * escala;
             n.x0 = aleatorio.nextFloat() * (larguraTela + 2 * n.largura);
             n.y0 = aleatorio.nextFloat() * (alturaTela + 2 * n.altura);
-            n.vx = 10f + aleatorio.nextFloat() * 14f;          // deriva lateral (px/s)
-            n.parallax = 0.15f + aleatorio.nextFloat() * 0.2f; // desce mais devagar que a estrada
+            n.vx = 10f + aleatorio.nextFloat() * 14f;
+            n.parallax = 0.15f + aleatorio.nextFloat() * 0.2f;
             nuvens.add(n);
         }
     }
 
     private Color corFolha() {
-        if (fase == 1) return new Color(0.95f, 0.62f, 0.18f, 0.95f);                 // outono na cidade
-        float r = aleatorio.nextFloat();                                              // floresta: verdes e dourados
+        if (fase == 1) return new Color(0.95f, 0.62f, 0.18f, 0.95f);
+        float r = aleatorio.nextFloat();
         if (r < 0.55f) return new Color(0.45f, 0.78f, 0.28f, 0.95f);
         if (r < 0.80f) return new Color(0.85f, 0.75f, 0.25f, 0.95f);
         return new Color(0.80f, 0.40f, 0.18f, 0.95f);
@@ -194,13 +178,13 @@ public class FundoRolante {
             Particula p = new Particula();
             p.x = aleatorio.nextFloat() * larguraTela;
             p.y = aleatorio.nextFloat() * alturaTela;
-            if (fase == 3) {          // neve: bem leve, cai devagar e quase sem girar
+            if (fase == 3) {
                 p.queda = 20f + aleatorio.nextFloat() * 30f;
                 p.amplitude = 8f + aleatorio.nextFloat() * 16f;
                 p.escala = 0.5f + aleatorio.nextFloat() * 0.8f;
                 p.giro = 0f;
                 p.cor = new Color(1f, 1f, 1f, 0.95f);
-            } else {                  // folhas
+            } else {
                 p.queda = 28f + aleatorio.nextFloat() * 40f;
                 p.amplitude = 14f + aleatorio.nextFloat() * 26f;
                 p.escala = 0.7f + aleatorio.nextFloat() * 0.7f;
@@ -254,7 +238,6 @@ public class FundoRolante {
         }
     }
 
-    /** Chame a cada quadro (ate no menu), exceto quando o jogo estiver pausado. */
     public void atualizar(float delta) {
         tempo += delta;
 
@@ -278,21 +261,19 @@ public class FundoRolante {
 
     private static float modulo(float a, float b) { return ((a % b) + b) % b; }
 
-    /** Chame dentro de lote.begin()/end(), antes de obstaculos e jogador. */
     public void desenhar(SpriteBatch lote, float progresso) {
         float h = chao.getHeight();
         float y = -(progresso % h);
-        // Duas copias do tile, uma sobre a outra com 1 px de sobreposicao (evita linha entre elas).
+
         lote.draw(chao, 0, y, larguraTela, h);
         lote.draw(chao, 0, y + h - 1f, larguraTela, h);
 
-        // De tras para frente: itens mais abaixo na tela ficam por cima dos mais altos.
         for (int i = itens.size() - 1; i >= 0; i--) {
             Item it = itens.get(i);
             float yTela = it.yMundo - progresso;
             if (yTela > alturaTela || yTela + it.altura < 0) continue;
             if (it.balanca) {
-                // Vento: onda que viaja pelo mapa (depende da posicao no mundo), ate +-3 graus.
+
                 float angulo = 3f * (float) Math.sin(tempo * 1.6f + it.yMundo * 0.006f + it.x * 0.01f);
                 lote.draw(it.textura, it.x, yTela, it.largura / 2f, it.altura * 0.12f, it.largura, it.altura,
                     1f, 1f, angulo, 0, 0, it.textura.getWidth(), it.textura.getHeight(), false, false);
@@ -302,16 +283,14 @@ public class FundoRolante {
         }
     }
 
-    /** Chame depois de obstaculos e jogador (antes do HUD): nuvens, raios, passaros e particulas. */
     public void desenharFrente(SpriteBatch lote, float progresso) {
-        // Sombras de nuvens: derivam para o lado e descem mais devagar que a estrada (parallax).
+
         for (Nuvem n : nuvens) {
             float x = modulo(n.x0 + n.vx * tempo, larguraTela + 2 * n.largura) - n.largura;
             float y = modulo(n.y0 - progresso * n.parallax, alturaTela + 2 * n.altura) - n.altura;
             lote.draw(n.textura, x, y, n.largura, n.altura);
         }
 
-        // Floresta: raios de luz que pulsam suavemente entre as copas.
         if (texRaio != null) {
             for (Raio r : raios) {
                 float alfa = 0.20f + 0.11f * (float) Math.sin(tempo * 0.55f + r.fase);
@@ -322,7 +301,6 @@ public class FundoRolante {
             lote.setColor(Color.WHITE);
         }
 
-        // Passaros: sombra no chao (deslocada) e o passaro no ar, batendo asas.
         boolean asasAbertas = ((int) (tempo * 9f)) % 2 == 0;
         Texture quadro = asasAbertas ? passaro1 : passaro2;
         for (Passaro p : bando) {
@@ -336,12 +314,11 @@ public class FundoRolante {
                 1.2f, 1.2f, 0f, 0, 0, quadro.getWidth(), quadro.getHeight(), paraEsquerda, false);
         }
 
-        // Folhas (cidade/floresta) ou neve (Alpes), balancando de um lado para o outro.
         float w = texParticula.getWidth(), hh = texParticula.getHeight();
         for (Particula p : particulas) {
             float x = p.x + p.amplitude * (float) Math.sin(tempo * p.frequencia + p.fase);
             if (fase == 3) {
-                // Halo azul bem fraco: o floco continua visivel sobre a neve branca.
+
                 lote.setColor(0.55f, 0.68f, 0.88f, 0.40f);
                 lote.draw(texParticula, x, p.y, w / 2f, hh / 2f, w, hh, p.escala * 1.7f, p.escala * 1.7f, 0f,
                     0, 0, texParticula.getWidth(), texParticula.getHeight(), false, false);
@@ -351,7 +328,6 @@ public class FundoRolante {
                 0, 0, texParticula.getWidth(), texParticula.getHeight(), false, false);
         }
 
-        // Floresta: vaga-lumes que vagam e piscam.
         if (texVagaLume != null) {
             float vw = texVagaLume.getWidth(), vh = texVagaLume.getHeight();
             for (VagaLume v : vagaLumes) {

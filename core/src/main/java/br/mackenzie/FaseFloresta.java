@@ -1,6 +1,5 @@
 package br.mackenzie;
 
-/** Fase 2: floresta. Mais rapida, com mais obstaculos. */
 public class FaseFloresta implements ConfiguracaoFase {
     public float getVelocidade() { return 250f; }
     public float getVelocidadeCaramelo() { return 320f; }

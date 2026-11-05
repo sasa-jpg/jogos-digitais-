@@ -20,7 +20,6 @@ public class Caramelo {
 
     public Sprite getSprite() { return sprite; }
 
-    /** ritmo = 1 na velocidade inicial; maior = patas se mexem mais rapido. */
     public void atualizar(float delta, float ritmo) {
         tempoAnimacao += delta * ritmo;
         if (tempoAnimacao >= 0.22f) {
@@ -31,7 +30,7 @@ public class Caramelo {
     }
 
     public void moverPara(float posicaoX) {
-        // Mantem o cachorro dentro dos limites da estrada.
+
         sprite.setX(Math.max(190, Math.min(675, posicaoX)));
     }
 
